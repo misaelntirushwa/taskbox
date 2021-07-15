@@ -4,7 +4,9 @@ import { Task } from "../models/task.model";
 // Define the actions available to the app
 export const actions = {
     ARCHIVE_TASK: 'ARCHIVE_TASK',
-    PIN_TASK: 'PIN_TASK'
+    PIN_TASK: 'PIN_TASK',
+    // Define the new error field we need
+    ERROR: 'APP_ERROR',
 };
 
 export class ArchiveTask {
@@ -19,6 +21,13 @@ export class PinTask {
     constructor(public payload: string) {}
 }
 
+// The class definition for our error field
+export class AppError {
+    static readonly type = actions.ERROR;
+
+    constructor(public payload: boolean) {}
+}
+
 // The initial state of our store when the app loads.
 // Usually you would fetch this from a server
 const defaultTasks = {
@@ -30,13 +39,15 @@ const defaultTasks = {
 
 export class TaskStateModel {
     entities: { [id: number]: Task };
+    error: boolean;
 }
 
 // sets the default state
 @State<TaskStateModel>({
     name: 'tasks',
     defaults: {
-        entities: defaultTasks
+        entities: defaultTasks,
+        error: false
     }
 })
 export class TasksState {
@@ -44,6 +55,13 @@ export class TasksState {
     static getAllTasks(state: TaskStateModel) {
         const entities = state.entities;
         return Object.keys(entities).map(id => entities[+id]);
+    }
+
+    // Define a new selector for the error field
+    @Selector()
+    static getError(state: TaskStateModel) {
+        const { error } = state;
+        return error;
     }
 
     // Triggers the PinTask action, similar to redux
@@ -72,5 +90,14 @@ export class TasksState {
           patchState({
               entities
           });
+    }
+
+    // Function to handle how the state should be updated when the action is triggered
+    @Action(AppError)
+    setAppError({ patchState, getState }: StateContext<TaskStateModel>, { payload }: AppError) {
+        const state = getState();
+        patchState({
+            error: !state.error
+        });
     }
 }
